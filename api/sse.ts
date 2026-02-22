@@ -295,7 +295,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     try {
         const server = await createMcpServer();
-        const transport = new SSEServerTransport('/api/sse', res);
+        const transport = new ServerSSETransport('/mcp', res);
         await server.connect(transport);
     } catch (error) {
         console.error('Error in SSE handler:', error);
