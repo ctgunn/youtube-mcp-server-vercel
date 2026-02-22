@@ -1,12 +1,11 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "env": {
     "YOUTUBE_API_KEY": "@youtube_api_key"
   },
   "functions": {
-    "api/sse.ts": {
+    "dist/api/**/*.js": {
       "runtime": "nodejs20.x",
       "memory": 1024,
       "maxDuration": 60
@@ -15,12 +14,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/$1.ts",
-      "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/api/sse.ts"
+      "dest": "/dist/api/$1.js"
     }
   ]
 }
