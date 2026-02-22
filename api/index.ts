@@ -287,20 +287,30 @@ router.get('/mcp', async (req: Request, res: Response) => {
             return res.status(500).json({ error: 'YOUTUBE_API_KEY is required' });
         }
 
+        // 1. CLEANUP: If a server already exists and is connected, close it first.
+        // This prevents the "Already connected to a transport" error in your logs.
+        if (serverInstance) {
+            try {
+                await serverInstance.close();
+            } catch (e) {
+                // Ignore errors during close, we just want a fresh start
+            }
+            serverInstance = null; 
+        }
+
+        // 2. Get a fresh server instance
         const server = await createMcpServer();
         
-        // 1. Initialize transport. 
-        // DO NOT manually set headers or call res.flushHeaders() here.
-        // The SDK handles the 'text/event-stream' headers internally.
+        // 3. Initialize transport (SDK handles headers internally)
         const sseTransport = new SSEServerTransport('/api/messages', res);
         
-        // 2. Update global reference for the POST /api/messages handler
+        // 4. Update global reference for the POST /api/messages handler
         transport = sseTransport; 
 
-        // 3. Connect the server to the transport
+        // 5. Connect the server to the transport
         await server.connect(sseTransport);
 
-        // 4. Handle connection close to clean up the global reference
+        // 6. Handle connection close to clean up the global reference
         req.on('close', () => {
             transport = null;
         });
@@ -308,8 +318,7 @@ router.get('/mcp', async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Error in MCP SSE handler:', error);
         
-        // 5. CRITICAL: Only send a JSON error if the transport hasn't 
-        // already started the HTTP response stream.
+        // Only send JSON if the stream hasn't started
         if (!res.headersSent) {
             res.status(500).json({
                 error: 'Internal server error',
