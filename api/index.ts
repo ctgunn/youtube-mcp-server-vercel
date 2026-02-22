@@ -283,28 +283,39 @@ async function createMcpServer() {
 
 router.get('/mcp', async (req: Request, res: Response) => {
     try {
-        // CRITICAL: Tell Vercel and OpenAI this is a live stream
-        res.setHeader('Content-Type', 'text/event-stream');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.setHeader('Connection', 'keep-alive');
-        res.flushHeaders(); // Send headers immediately
+        if (!process.env.YOUTUBE_API_KEY) {
+            return res.status(500).json({ error: 'YOUTUBE_API_KEY is required' });
+        }
 
         const server = await createMcpServer();
-        // Create the transport and immediately connect
+        
+        // 1. Initialize transport. 
+        // DO NOT manually set headers or call res.flushHeaders() here.
+        // The SDK handles the 'text/event-stream' headers internally.
         const sseTransport = new SSEServerTransport('/api/messages', res);
-        transport = sseTransport; // Update the global ref for the POST handler
+        
+        // 2. Update global reference for the POST /api/messages handler
+        transport = sseTransport; 
+
+        // 3. Connect the server to the transport
         await server.connect(sseTransport);
 
-        // Crucial: Handle connection close
+        // 4. Handle connection close to clean up the global reference
         req.on('close', () => {
             transport = null;
         });
+
     } catch (error) {
         console.error('Error in MCP SSE handler:', error);
-        res.status(500).json({
-            error: 'Internal server error',
-            message: error instanceof Error ? error.message : String(error)
-        });
+        
+        // 5. CRITICAL: Only send a JSON error if the transport hasn't 
+        // already started the HTTP response stream.
+        if (!res.headersSent) {
+            res.status(500).json({
+                error: 'Internal server error',
+                message: error instanceof Error ? error.message : String(error)
+            });
+        }
     }
 });
 
