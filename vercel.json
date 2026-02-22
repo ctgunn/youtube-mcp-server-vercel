@@ -1,9 +1,5 @@
 {
   "version": 2,
-  "outputDirectory": "dist",
-  "env": {
-    "YOUTUBE_API_KEY": "@youtube_api_key"
-  },
   "functions": {
     "dist/api/**/*.js": {
       "runtime": "nodejs20.x",
