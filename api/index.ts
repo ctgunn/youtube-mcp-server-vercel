@@ -23,7 +23,7 @@ const app = express();
 app.use(express.json());
 
 // Health check
-app.get('/api/health', (req: Request, res: Response) => {
+app.get('/health', (req: Request, res: Response) => {
     res.json({ status: 'ok', key_configured: !!process.env.YOUTUBE_API_KEY });
 });
 
@@ -283,7 +283,7 @@ app.get('/', (req: Request, res: Response) => {
     res.send('YouTube MCP Server is running. Access MCP at /api/mcp');
 });
 
-app.get('/api/mcp', async (req: Request, res: Response) => {
+app.get('/mcp', async (req: Request, res: Response) => {
     try {
         const server = await createMcpServer();
         // Create the transport and immediately connect
@@ -324,7 +324,7 @@ app.get('/api/mcp', async (req: Request, res: Response) => {
 // });
 
 // MCP message handler endpoint
-app.post('/api/messages', async (req: Request, res: Response) => {
+app.post('/messages', async (req: Request, res: Response) => {
     try {
         if (transport) {
             await transport.handlePostMessage(req, res);
