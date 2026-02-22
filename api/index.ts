@@ -422,4 +422,12 @@ app.get('/api', (req, res) => {
     res.send('YouTube MCP Server is running at /api/mcp');
 });
 
+// Get the port from environment variables, defaulting to 8080
+// We convert it to a Number to satisfy TypeScript's strict typing
+const port = Number(process.env.PORT) || 8080;
+
+app.listen(port, '0.0.0.0', () => {
+    console.log(`YouTube MCP Server listening on port ${port}`);
+});
+
 export default app;
