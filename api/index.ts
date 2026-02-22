@@ -279,16 +279,22 @@ async function createMcpServer() {
 }
 
 // MCP SSE connection endpoint
+app.get('/', (req, res) => {
+    res.send('YouTube MCP Server is running. Access MCP at /api/mcp');
+});
+
 app.get('/api/mcp', async (req, res) => {
     try {
-        if (!process.env.YOUTUBE_API_KEY) {
-            res.status(500).json({ error: 'YOUTUBE_API_KEY environment variable is required' });
-            return;
-        }
-
         const server = await createMcpServer();
-        transport = new SSEServerTransport('/api/messages', res);
-        await server.connect(transport);
+        // Create the transport and immediately connect
+        const sseTransport = new SSEServerTransport('/api/messages', res);
+        transport = sseTransport; // Update the global ref for the POST handler
+        await server.connect(sseTransport);
+
+        // Crucial: Handle connection close
+        req.on('close', () => {
+            transport = null;
+        });
     } catch (error) {
         console.error('Error in MCP SSE handler:', error);
         res.status(500).json({
@@ -297,6 +303,25 @@ app.get('/api/mcp', async (req, res) => {
         });
     }
 });
+
+// app.get('/api/mcp', async (req, res) => {
+//     try {
+//         if (!process.env.YOUTUBE_API_KEY) {
+//             res.status(500).json({ error: 'YOUTUBE_API_KEY environment variable is required' });
+//             return;
+//         }
+
+//         const server = await createMcpServer();
+//         transport = new SSEServerTransport('/api/messages', res);
+//         await server.connect(transport);
+//     } catch (error) {
+//         console.error('Error in MCP SSE handler:', error);
+//         res.status(500).json({
+//             error: 'Internal server error',
+//             message: error instanceof Error ? error.message : String(error)
+//         });
+//     }
+// });
 
 // MCP message handler endpoint
 app.post('/api/messages', async (req, res) => {
