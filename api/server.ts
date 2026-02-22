@@ -1,6 +1,5 @@
-import { VercelRequest, VercelResponse } from '@vercel/node';
 import { Server } from '@modelcontextprotocol/sdk/server';
-import { NodeHttpServerTransport } from '@modelcontextprotocol/node';
+import { StreamableHTTPTransport } from '@modelcontextprotocol/node';
 import {
     CallToolRequestSchema,
     ListToolsRequestSchema,
@@ -271,7 +270,7 @@ async function createMcpServer() {
 export default async function handler(req: any, res: any) {
     try {
         const server = await createMcpServer();
-        const transport = new NodeHttpServerTransport(req, res);
+        const transport = new StreamableHTTPTransport(req, res);
         await server.connect(transport);
     } catch (error) {
         console.error('Error in MCP handler:', error);
