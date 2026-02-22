@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "lib": ["ES2022", "DOM"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
     "types": ["node"],
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": ".", 
     "strict": false,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -20,15 +20,11 @@
     "noImplicitAny": false
   },
   "include": [
-    "src/services/**/*",
-    "src/index.ts",
-    "src/server.ts",
-    "src/cli.ts",
-    "src/types.ts"
+    "src/**/*",
+    "api/**/*"
   ],
   "exclude": [
     "node_modules",
-    "src/functions/**/*",
-    "api/**/*"
+    "dist"
   ]
 }
