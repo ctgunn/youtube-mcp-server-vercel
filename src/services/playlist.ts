@@ -1,11 +1,11 @@
-import { google } from 'googleapis';
+import { google, youtube_v3 } from 'googleapis';
 import { PlaylistParams, PlaylistItemsParams, SearchParams } from '../types.js';
 
 /**
  * Service for interacting with YouTube playlists
  */
 export class PlaylistService {
-  private youtube;
+  private youtube!: youtube_v3.Youtube;
   private initialized = false;
 
   constructor() {

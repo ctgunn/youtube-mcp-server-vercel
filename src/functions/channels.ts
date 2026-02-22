@@ -1,6 +1,6 @@
 // @ts-ignore - We know the SDK exists
 import { MCPFunction, MCPFunctionGroup } from "@modelcontextprotocol/sdk";
-import { google } from 'googleapis';
+import { google, youtube_v3 } from 'googleapis';
 
 // Utility functions
 function safeGet<T>(obj: any, path: string, defaultValue?: T): T | undefined {
@@ -15,7 +15,7 @@ function safeParse(value: string | number | null | undefined, defaultValue = 0):
 }
 
 export class ChannelManagement implements MCPFunctionGroup {
-  private youtube;
+  private youtube!: youtube_v3.Youtube;
 
   constructor() {
     const apiKey = process.env.YOUTUBE_API_KEY;

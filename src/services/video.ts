@@ -1,11 +1,11 @@
-import { google } from 'googleapis';
+import { google, youtube_v3 } from 'googleapis';
 import { VideoParams, SearchParams, TrendingParams, RelatedVideosParams } from '../types.js';
 
 /**
  * Service for interacting with YouTube videos
  */
 export class VideoService {
-  private youtube;
+  private youtube!: youtube_v3.Youtube;
   private initialized = false;
 
   constructor() {
@@ -129,22 +129,55 @@ export class VideoService {
    * Get related videos for a specific video
    */
   async getRelatedVideos({ 
-    videoId, 
-    maxResults = 10 
+  videoId, 
+  maxResults = 10 
   }: RelatedVideosParams): Promise<any[]> {
     try {
       this.initialize();
       
+      // 1. Get the original video info to find "related" context
+      const videoInfo = await this.youtube.videos.list({
+        part: ['snippet'],
+        id: [videoId]
+      });
+
+      const snippet = videoInfo.data.items?.[0]?.snippet;
+      if (!snippet) throw new Error('Source video not found');
+
+      // 2. Use the title or tags as a search query
+      // We filter for 'video' and exclude the original videoId
       const response = await this.youtube.search.list({
         part: ['snippet'],
-        relatedToVideoId: videoId,
-        maxResults,
+        q: snippet.title, // Use the title as the search context
+        maxResults: maxResults + 1, // Get one extra in case the original shows up
         type: ['video']
       });
       
-      return response.data.items || [];
+      // Filter out the original video if it appears in results
+      return (response.data.items || []).filter(item => item.id?.videoId !== videoId).slice(0, maxResults);
+      
     } catch (error) {
-      throw new Error(`Failed to get related videos: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(`Failed to get similar videos: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
+
+//   async getRelatedVideos({ 
+//     videoId, 
+//     maxResults = 10 
+//   }: RelatedVideosParams): Promise<any[]> {
+//     try {
+//       this.initialize();
+      
+//       const response = await this.youtube.search.list({
+//         part: ['snippet'],
+//         relatedToVideoId: videoId,
+//         maxResults,
+//         type: ['video']
+//       });
+      
+//       return response.data.items || [];
+//     } catch (error) {
+//       throw new Error(`Failed to get related videos: ${error instanceof Error ? error.message : String(error)}`);
+//     }
+//   }
 }

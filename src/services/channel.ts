@@ -1,11 +1,11 @@
-import { google } from 'googleapis';
+import { google, youtube_v3 } from 'googleapis';
 import { ChannelParams, ChannelVideosParams } from '../types.js';
 
 /**
  * Service for interacting with YouTube channels
  */
 export class ChannelService {
-  private youtube;
+  private youtube!: youtube_v3.Youtube;
   private initialized = false;
 
   constructor() {

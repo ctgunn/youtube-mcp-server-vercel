@@ -1,4 +1,4 @@
-import { google } from 'googleapis';
+import { google, youtube_v3 } from 'googleapis';
 // @ts-ignore - We know the SDK exists
 import { MCPFunction, MCPFunctionGroup } from "@modelcontextprotocol/sdk";
 
@@ -9,7 +9,7 @@ function safelyExecute<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 export class VideoManagement implements MCPFunctionGroup {
-  private youtube;
+  private youtube!: youtube_v3.Youtube;
 
   constructor() {
     const apiKey = process.env.YOUTUBE_API_KEY;

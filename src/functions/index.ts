@@ -1,7 +1,7 @@
-import { VideoManagement } from './videos';
-import { ChannelManagement } from './channels';
-import { PlaylistManagement } from './playlists';
-import { TranscriptManagement } from './content/transcripts';
+import { VideoManagement } from './videos.js';
+import { ChannelManagement } from './channels.js';
+import { PlaylistManagement } from './playlists.js';
+import { TranscriptManagement } from './content/transcripts.js';
 
 export {
   VideoManagement,
