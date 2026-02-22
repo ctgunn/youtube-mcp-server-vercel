@@ -20,12 +20,12 @@
     "noImplicitAny": false
   },
   "include": [
-    "src/**/*",
-    "api/**/*"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
     "src/functions/**/*",
-    "dist/**/*"
+    "dist/**/*",
+    "api/**/*"
   ]
 }
