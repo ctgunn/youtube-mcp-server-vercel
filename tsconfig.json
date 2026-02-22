@@ -6,7 +6,7 @@
     "lib": ["ES2022", "DOM"],
     "types": ["node"],
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": ".",
     "strict": false,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -20,11 +20,8 @@
     "noImplicitAny": false
   },
   "include": [
-    "src/services/**/*",
-    "src/index.ts",
-    "src/server.ts",
-    "src/cli.ts",
-    "src/types.ts"
+    "src/**/*",
+    "api/**/*"
   ],
   "exclude": [
     "node_modules",

@@ -1,8 +1,11 @@
 node_modules
-dist
 .git
 .gitignore
 README.md
 CLAUDE.md
 youtube-mcp-readme.md
 youtube-readme.md
+DOCKERFILE
+scripts/
+.github/
+LICENSE
