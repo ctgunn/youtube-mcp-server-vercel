@@ -316,7 +316,7 @@ router.all('/mcp', async (req: Request, res: Response) => {
 
         // 3. Register your existing tool handlers to this new server instance
         // (You can move your 'setRequestHandler' logic into a helper function)
-        createMcpServer(transport); 
+        await createMcpServer(transport); 
 
         // 4. Handle the request using the transport
         await transport.handleRequest(req, res);
