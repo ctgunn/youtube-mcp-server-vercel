@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { Server } from '@modelcontextprotocol/sdk/server';
-import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+import { NodeHttpServerTransport } from '@modelcontextprotocol/node';
 import {
     CallToolRequestSchema,
     ListToolsRequestSchema,
@@ -268,37 +268,13 @@ async function createMcpServer() {
     return server;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-    // CORS headers
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-    res.setHeader(
-        'Access-Control-Allow-Headers',
-        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-    );
-
-    if (req.method === 'OPTIONS') {
-        res.status(200).end();
-        return;
-    }
-
-    if (req.method !== 'GET') {
-        res.status(405).json({ error: 'Method not allowed' });
-        return;
-    }
-
-    if (!process.env.YOUTUBE_API_KEY) {
-        res.status(500).json({ error: 'YOUTUBE_API_KEY environment variable is required' });
-        return;
-    }
-
+export default async function handler(req: any, res: any) {
     try {
         const server = await createMcpServer();
-        const transport = new ServerSSETransport('/mcp', res);
+        const transport = new NodeHttpServerTransport(req, res);
         await server.connect(transport);
     } catch (error) {
-        console.error('Error in SSE handler:', error);
+        console.error('Error in MCP handler:', error);
         res.status(500).json({ 
             error: 'Internal server error',
             message: error instanceof Error ? error.message : String(error)
