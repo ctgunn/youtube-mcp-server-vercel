@@ -293,6 +293,9 @@ router.all('/mcp', async (req: Request, res: Response) => {
             return res.status(500).json({ error: 'YOUTUBE_API_KEY is required' });
         }
 
+        // This tells Vercel's edge network not to buffer the response
+        res.setHeader('X-Accel-Buffering', 'no'); 
+
         // 1. Initialize the transport first with stateless options
         const transport = new StreamableHTTPServerTransport({
             sessionIdGenerator: undefined // Mandatory for stateless Vercel environments
