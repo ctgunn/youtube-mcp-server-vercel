@@ -281,11 +281,6 @@ async function createMcpServer() {
     return server;
 }
 
-// // MCP SSE connection endpoint
-// router.get('/', (req: Request, res: Response) => {
-//     res.send('YouTube MCP Server is running. Access MCP at /api/mcp');
-// });
-
 router.get('/mcp', async (req: Request, res: Response) => {
     try {
         const server = await createMcpServer();
