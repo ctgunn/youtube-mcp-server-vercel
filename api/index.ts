@@ -331,17 +331,29 @@ router.get('/mcp', async (req: Request, res: Response) => {
 // MCP message handler endpoint
 router.post('/messages', async (req: Request, res: Response) => {
     try {
-        if (transport) {
-            await transport.handlePostMessage(req, res);
-        } else {
-            res.status(400).json({ error: 'No active MCP connection' });
+        // 1. Check if the transport exists in this current Vercel instance
+        if (!transport) {
+            console.error('MCP Error: 400 - No active transport in this serverless instance.');
+            return res.status(400).json({ 
+                error: 'No active MCP connection in this instance',
+                detail: 'Vercel may have routed this POST request to a new, cold instance. Please retry the connection.'
+            });
         }
+
+        // 2. Pass the message to the MCP SDK
+        // The SDK will handle the response to the client
+        await transport.handlePostMessage(req, res);
+
     } catch (error) {
         console.error('Error handling MCP message:', error);
-        res.status(500).json({
-            error: 'Internal server error',
-            message: error instanceof Error ? error.message : String(error)
-        });
+        
+        // Only send a response if the SDK hasn't already sent one
+        if (!res.headersSent) {
+            res.status(500).json({
+                error: 'Internal server error',
+                message: error instanceof Error ? error.message : String(error)
+            });
+        }
     }
 });
 
