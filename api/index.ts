@@ -281,10 +281,10 @@ async function createMcpServer() {
     return server;
 }
 
-// MCP SSE connection endpoint
-router.get('/', (req: Request, res: Response) => {
-    res.send('YouTube MCP Server is running. Access MCP at /api/mcp');
-});
+// // MCP SSE connection endpoint
+// router.get('/', (req: Request, res: Response) => {
+//     res.send('YouTube MCP Server is running. Access MCP at /api/mcp');
+// });
 
 router.get('/mcp', async (req: Request, res: Response) => {
     try {
@@ -307,25 +307,6 @@ router.get('/mcp', async (req: Request, res: Response) => {
     }
 });
 
-// app.get('/api/mcp', async (req, res) => {
-//     try {
-//         if (!process.env.YOUTUBE_API_KEY) {
-//             res.status(500).json({ error: 'YOUTUBE_API_KEY environment variable is required' });
-//             return;
-//         }
-
-//         const server = await createMcpServer();
-//         transport = new SSEServerTransport('/api/messages', res);
-//         await server.connect(transport);
-//     } catch (error) {
-//         console.error('Error in MCP SSE handler:', error);
-//         res.status(500).json({
-//             error: 'Internal server error',
-//             message: error instanceof Error ? error.message : String(error)
-//         });
-//     }
-// });
-
 // MCP message handler endpoint
 router.post('/messages', async (req: Request, res: Response) => {
     try {
@@ -341,6 +322,11 @@ router.post('/messages', async (req: Request, res: Response) => {
             message: error instanceof Error ? error.message : String(error)
         });
     }
+});
+
+// This catches the absolute root of your domain (https://your-app.vercel.app)
+app.get('/', (req: Request, res: Response) => {
+    res.send('YouTube MCP Server is running. Access MCP at /api/mcp');
 });
 
 // Mount the router under the '/api' path
