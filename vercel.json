@@ -9,7 +9,11 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
+      "src": "/api/mcp",
+      "dest": "api/index.ts"
+    },
+    {
+      "src": "/api/health",
       "dest": "api/index.ts"
     },
     {
