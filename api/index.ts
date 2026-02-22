@@ -22,8 +22,11 @@ import {
 const app = express();
 app.use(express.json());
 
+// 1. Create a Router to handle the '/api' prefix
+const router = express.Router();
+
 // Health check
-app.get('/health', (req: Request, res: Response) => {
+router.get('/health', (req: Request, res: Response) => {
     res.json({ status: 'ok', key_configured: !!process.env.YOUTUBE_API_KEY });
 });
 
@@ -279,11 +282,11 @@ async function createMcpServer() {
 }
 
 // MCP SSE connection endpoint
-app.get('/', (req: Request, res: Response) => {
+router.get('/', (req: Request, res: Response) => {
     res.send('YouTube MCP Server is running. Access MCP at /api/mcp');
 });
 
-app.get('/mcp', async (req: Request, res: Response) => {
+router.get('/mcp', async (req: Request, res: Response) => {
     try {
         const server = await createMcpServer();
         // Create the transport and immediately connect
@@ -324,7 +327,7 @@ app.get('/mcp', async (req: Request, res: Response) => {
 // });
 
 // MCP message handler endpoint
-app.post('/messages', async (req: Request, res: Response) => {
+router.post('/messages', async (req: Request, res: Response) => {
     try {
         if (transport) {
             await transport.handlePostMessage(req, res);
@@ -338,6 +341,15 @@ app.post('/messages', async (req: Request, res: Response) => {
             message: error instanceof Error ? error.message : String(error)
         });
     }
+});
+
+// Mount the router under the '/api' path
+// This ensures Express matches Vercel's incoming '/api/...' request
+app.use('/api', router);
+
+// Fallback for the base /api route
+app.get('/api', (req, res) => {
+    res.send('YouTube MCP Server is running at /api/mcp');
 });
 
 export default app;
