@@ -29,6 +29,7 @@ Thumbs.db
 *.dat
 *.ico
 # *.json
+package-lock.json
 /resources/
 /locales/
 /frontend-new/
