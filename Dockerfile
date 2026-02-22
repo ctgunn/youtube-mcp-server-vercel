@@ -1,4 +1,14 @@
-# ... (Keep Stage 1: Build as is) ...
+# Stage 1: Build
+FROM node:22-slim AS builder
+WORKDIR /usr/src/app
+
+# Copy package files and install ALL dependencies (including dev)
+COPY package*.json ./
+RUN npm install
+
+# Copy source and build the application
+COPY . .
+RUN npm run build
 
 # Stage 2: Production Runtime
 FROM node:22-slim
