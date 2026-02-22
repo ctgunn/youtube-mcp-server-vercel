@@ -28,7 +28,7 @@ Thumbs.db
 *.exe
 *.dat
 *.ico
-*.json
+# *.json
 /resources/
 /locales/
 /frontend-new/
