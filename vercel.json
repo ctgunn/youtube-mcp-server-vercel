@@ -1,7 +1,7 @@
 {
   "version": 2,
   "functions": {
-    "api/**/*.ts": {
+    "dist/api/**/*.js": {
       "runtime": "nodejs20.x",
       "memory": 1024,
       "maxDuration": 60
@@ -10,7 +10,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/$1"
+      "dest": "/dist/api/$1.js"
     }
   ]
 }
