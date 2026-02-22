@@ -1,5 +1,6 @@
+import express from 'express';
 import { Server } from '@modelcontextprotocol/sdk/server';
-import { StreamableHTTPTransport } from '@modelcontextprotocol/node';
+import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import {
     CallToolRequestSchema,
     ListToolsRequestSchema,
@@ -18,12 +19,22 @@ import {
     PlaylistItemsParams,
 } from '../src/types.js';
 
+const app = express();
+app.use(express.json());
+
+// Health check
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', key_configured: !!process.env.YOUTUBE_API_KEY });
+});
+
 // Check for required environment variables
 if (!process.env.YOUTUBE_API_KEY) {
     console.error('Error: YOUTUBE_API_KEY environment variable is required.');
 }
 
 let serverInstance: Server | null = null;
+let transport: SSEServerTransport | null = null;
+
 const videoService = new VideoService();
 const transcriptService = new TranscriptService();
 const playlistService = new PlaylistService();
@@ -267,16 +278,41 @@ async function createMcpServer() {
     return server;
 }
 
-export default async function handler(req: any, res: any) {
+// MCP SSE connection endpoint
+app.get('/api/mcp', async (req, res) => {
     try {
+        if (!process.env.YOUTUBE_API_KEY) {
+            res.status(500).json({ error: 'YOUTUBE_API_KEY environment variable is required' });
+            return;
+        }
+
         const server = await createMcpServer();
-        const transport = new StreamableHTTPTransport(req, res);
+        transport = new SSEServerTransport('/api/messages', res);
         await server.connect(transport);
     } catch (error) {
-        console.error('Error in MCP handler:', error);
-        res.status(500).json({ 
+        console.error('Error in MCP SSE handler:', error);
+        res.status(500).json({
             error: 'Internal server error',
             message: error instanceof Error ? error.message : String(error)
         });
     }
-}
+});
+
+// MCP message handler endpoint
+app.post('/api/messages', async (req, res) => {
+    try {
+        if (transport) {
+            await transport.handlePostMessage(req, res);
+        } else {
+            res.status(400).json({ error: 'No active MCP connection' });
+        }
+    } catch (error) {
+        console.error('Error handling MCP message:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: error instanceof Error ? error.message : String(error)
+        });
+    }
+});
+
+export default app;
