@@ -1,5 +1,6 @@
 import { MCPFunction, MCPFunctionGroup } from "@modelcontextprotocol/sdk";
 import { Translate } from "@google-cloud/translate/build/src/v2";
+import { google, youtube_v3 } from 'googleapis';
 
 // Utility function for safe execution with error handling
 function safelyExecute<T>(fn: () => Promise<T>): Promise<T> {
@@ -27,7 +28,7 @@ interface LanguageSegment extends LanguageDetection {
 }
 
 export class TranslationManager implements MCPFunctionGroup {
-  private youtube: any;
+  private youtube: youtube_v3.Youtube;
   private translate: Translate;
 
   constructor() {

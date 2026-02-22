@@ -2,6 +2,7 @@ import { MCPFunction, MCPFunctionGroup } from "@modelcontextprotocol/sdk";
 import { YoutubeTranscript } from "youtube-transcript";
 import * as ytdl from "ytdl-core";
 import * as fs from "fs/promises";
+import { google, youtube_v3 } from 'googleapis';
 
 // Utility functions
 function safeGet<T>(obj: any, path: string, defaultValue?: T): T | undefined {
@@ -25,7 +26,7 @@ function safelyExecute<T>(fn: () => T): T | null {
 }
 
 export class ShortsHooksGenerator implements MCPFunctionGroup {
-  private youtube: any;
+  private youtube: youtube_v3.Youtube;
 
   constructor() {
     this.youtube = google.youtube({
