@@ -1,26 +1,34 @@
-# Use a modern, stable Node.js version (LTS is best)
-FROM node:22-slim
-
-# Create and change to the app directory
+# Stage 1: Build
+FROM node:22-slim AS builder
 WORKDIR /usr/src/app
 
-# Copy package files for caching
+# Copy package files and install ALL dependencies (including dev)
 COPY package*.json ./
+RUN npm install
 
-# Install production dependencies
-# Using --omit=dev keeps the image small
-RUN npm install --omit=dev
-
-# Copy the rest of the application code
+# Copy source and build the application
 COPY . .
-
-# Build the application
 RUN npm run build
 
-# Cloud Run sets the PORT environment variable (usually 8080)
-# Ensure your app listens on 0.0.0.0 (not 127.0.0.1)
-ENV PORT=8080
+# Stage 2: Production Runtime
+FROM node:22-slim
+WORKDIR /usr/src/app
 
-# Start the server
-# Use the compiled entry point from your 'dist' folder
+# Copy only the package files
+COPY package*.json ./
+
+# Install only production dependencies to keep the image small
+RUN npm install --omit=dev
+
+# Copy the compiled JS from the builder stage
+COPY --from=builder /usr/src/app/dist ./dist
+# Copy other necessary source files if your app needs them at runtime
+# (e.g., if you have any static assets or non-TS files in 'src')
+COPY --from=builder /usr/src/app/src ./src 
+
+# Set execution environment
+ENV PORT=8080
+EXPOSE 8080
+
+# Run the app
 CMD ["node", "dist/index.js"]
