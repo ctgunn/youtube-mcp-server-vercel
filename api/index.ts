@@ -288,14 +288,17 @@ async function createMcpServer(transport: StreamableHTTPServerTransport) {
 
 // Unified MCP HTTP Endpoint
 router.all('/mcp', async (req: Request, res: Response) => {
-    // 1. CRITICAL: Set headers BEFORE any async work to prevent buffering
-    res.setHeader('X-Accel-Buffering', 'no'); // Bypass Vercel/Cloud Run buffering
+    // 1. Set headers IMMEDIATELY. 
+    // Added 'nosniff' which helps streaming clients like OpenAI.
+    res.setHeader('X-Accel-Buffering', 'no');
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection', 'keep-alive');
 
     try {
         if (!process.env.YOUTUBE_API_KEY) {
+            console.error('Missing YOUTUBE_API_KEY');
             return res.status(500).json({ error: 'YOUTUBE_API_KEY is required' });
         }
 
@@ -304,14 +307,16 @@ router.all('/mcp', async (req: Request, res: Response) => {
             sessionIdGenerator: undefined 
         });
 
-        // 3. Register handlers (Ensure this is AWAITED)
-        await createMcpServer(transport); 
+        // 3. Create server (Awaited)
+        const server = await createMcpServer(transport); 
+
+        // LOGGING: This helps us see if OpenAI is even trying to ask for tools
+        console.log(`Incoming MCP Request: ${req.method} ${req.url}`);
 
         // 4. Handle the request
-        // This method from the SDK handles the JSON-RPC handshake
         await transport.handleRequest(req, res);
 
-        // 5. Ensure the response is closed if the SDK didn't end it
+        // 5. Force end the response if it's still hanging
         if (!res.writableEnded) {
             res.end();
         }
