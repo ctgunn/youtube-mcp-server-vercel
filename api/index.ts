@@ -288,38 +288,33 @@ async function createMcpServer(transport: StreamableHTTPServerTransport) {
 
 // Unified MCP HTTP Endpoint
 router.all('/mcp', async (req: Request, res: Response) => {
+    // 1. CRITICAL: Set headers BEFORE any async work to prevent buffering
+    res.setHeader('X-Accel-Buffering', 'no'); // Bypass Vercel/Cloud Run buffering
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+
     try {
         if (!process.env.YOUTUBE_API_KEY) {
             return res.status(500).json({ error: 'YOUTUBE_API_KEY is required' });
         }
 
-        // This tells Vercel's edge network not to buffer the response
-        res.setHeader('X-Accel-Buffering', 'no'); 
-
-        // 1. Initialize the transport first with stateless options
+        // 2. Initialize stateless transport
         const transport = new StreamableHTTPServerTransport({
-            sessionIdGenerator: undefined // Mandatory for stateless Vercel environments
+            sessionIdGenerator: undefined 
         });
 
-        // // 2. Create the server and PASS THE TRANSPORT as the second argument
-        // const server = new Server(
-        //     {
-        //         name: 'zubeid-youtube-mcp-server',
-        //         version: '1.0.0',
-        //     },
-        //     {
-        //         capabilities: {
-        //             tools: {},
-        //         },
-        //     }
-        // );
-
-        // 3. Register your existing tool handlers to this new server instance
-        // (You can move your 'setRequestHandler' logic into a helper function)
+        // 3. Register handlers (Ensure this is AWAITED)
         await createMcpServer(transport); 
 
-        // 4. Handle the request using the transport
+        // 4. Handle the request
+        // This method from the SDK handles the JSON-RPC handshake
         await transport.handleRequest(req, res);
+
+        // 5. Ensure the response is closed if the SDK didn't end it
+        if (!res.writableEnded) {
+            res.end();
+        }
 
     } catch (error) {
         console.error('MCP HTTP Transport Error:', error);
@@ -332,81 +327,6 @@ router.all('/mcp', async (req: Request, res: Response) => {
     }
 });
 
-// router.get('/mcp', async (req: Request, res: Response) => {
-//     try {
-//         if (!process.env.YOUTUBE_API_KEY) {
-//             return res.status(500).json({ error: 'YOUTUBE_API_KEY is required' });
-//         }
-
-//         // 1. CLEANUP: If a server already exists and is connected, close it first.
-//         // This prevents the "Already connected to a transport" error in your logs.
-//         if (serverInstance) {
-//             try {
-//                 await serverInstance.close();
-//             } catch (e) {
-//                 // Ignore errors during close, we just want a fresh start
-//             }
-//             serverInstance = null; 
-//         }
-
-//         // 2. Get a fresh server instance
-//         const server = await createMcpServer();
-        
-//         // 3. Initialize transport (SDK handles headers internally)
-//         const sseTransport = new SSEServerTransport('/api/messages', res);
-        
-//         // 4. Update global reference for the POST /api/messages handler
-//         transport = sseTransport; 
-
-//         // 5. Connect the server to the transport
-//         await server.connect(sseTransport);
-
-//         // 6. Handle connection close to clean up the global reference
-//         req.on('close', () => {
-//             transport = null;
-//         });
-
-//     } catch (error) {
-//         console.error('Error in MCP SSE handler:', error);
-        
-//         // Only send JSON if the stream hasn't started
-//         if (!res.headersSent) {
-//             res.status(500).json({
-//                 error: 'Internal server error',
-//                 message: error instanceof Error ? error.message : String(error)
-//             });
-//         }
-//     }
-// });
-
-// // MCP message handler endpoint
-// router.post('/messages', async (req: Request, res: Response) => {
-//     try {
-//         // 1. Check if the transport exists in this current Vercel instance
-//         if (!transport) {
-//             console.error('MCP Error: 400 - No active transport in this serverless instance.');
-//             return res.status(400).json({ 
-//                 error: 'No active MCP connection in this instance',
-//                 detail: 'Vercel may have routed this POST request to a new, cold instance. Please retry the connection.'
-//             });
-//         }
-
-//         // 2. Pass the message to the MCP SDK
-//         // The SDK will handle the response to the client
-//         await transport.handlePostMessage(req, res);
-
-//     } catch (error) {
-//         console.error('Error handling MCP message:', error);
-        
-//         // Only send a response if the SDK hasn't already sent one
-//         if (!res.headersSent) {
-//             res.status(500).json({
-//                 error: 'Internal server error',
-//                 message: error instanceof Error ? error.message : String(error)
-//             });
-//         }
-//     }
-// });
 
 // This catches the absolute root of your domain (https://your-app.vercel.app)
 app.get('/', (req: Request, res: Response) => {
