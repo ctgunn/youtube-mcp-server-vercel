@@ -21,10 +21,63 @@ import {
 } from '../src/types.js';
 
 const app = express();
-app.use(express.json());
 
 // 1. Create a Router to handle the '/api' prefix
 const router = express.Router();
+
+// Unified MCP HTTP Endpoint
+router.all('/mcp', async (req: Request, res: Response) => {
+// Ensure the body exists. If it's empty, the SDK throws that -32700 error.
+    if (req.method === 'POST' && (!req.body || Object.keys(req.body).length === 0)) {
+        console.error("Empty body received at /mcp");
+    }
+
+    // 1. Set headers IMMEDIATELY. 
+    // Added 'nosniff' which helps streaming clients like OpenAI.
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+
+    try {
+        if (!process.env.YOUTUBE_API_KEY) {
+            console.error('Missing YOUTUBE_API_KEY');
+            return res.status(500).json({ error: 'YOUTUBE_API_KEY is required' });
+        }
+
+        // 2. Initialize stateless transport
+        const transport = new StreamableHTTPServerTransport({
+            sessionIdGenerator: undefined 
+        });
+
+        // 3. Create server (Awaited)
+        const server = await createMcpServer(transport); 
+
+        // LOGGING: This helps us see if OpenAI is even trying to ask for tools
+        console.log(`Incoming MCP Request: ${req.method} ${req.url}`);
+
+        // 4. Handle the request
+        await transport.handleRequest(req, res);
+
+        // 5. Force end the response if it's still hanging
+        if (!res.writableEnded) {
+            res.end();
+        }
+
+    } catch (error) {
+        console.error('MCP HTTP Transport Error:', error);
+        if (!res.headersSent) {
+            res.status(500).json({
+                error: 'Internal server error',
+                message: error instanceof Error ? error.message : String(error)
+            });
+        }
+    }
+});
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Health check
 router.get('/health', (req: Request, res: Response) => {
@@ -36,19 +89,12 @@ if (!process.env.YOUTUBE_API_KEY) {
     console.error('Error: YOUTUBE_API_KEY environment variable is required.');
 }
 
-// let serverInstance: Server | null = null;
-// let transport: SSEServerTransport | null = null;
-
 const videoService = new VideoService();
 const transcriptService = new TranscriptService();
 const playlistService = new PlaylistService();
 const channelService = new ChannelService();
 
 async function createMcpServer(transport: StreamableHTTPServerTransport) {
-    // if (serverInstance) {
-    //     return serverInstance;
-    // }
-
     const server = new Server(
         {
             name: 'youtube-mcp-server',
@@ -285,53 +331,6 @@ async function createMcpServer(transport: StreamableHTTPServerTransport) {
     
     return server;
 }
-
-// Unified MCP HTTP Endpoint
-router.all('/mcp', async (req: Request, res: Response) => {
-    // 1. Set headers IMMEDIATELY. 
-    // Added 'nosniff' which helps streaming clients like OpenAI.
-    res.setHeader('X-Accel-Buffering', 'no');
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Cache-Control', 'no-cache, no-transform');
-    res.setHeader('Connection', 'keep-alive');
-
-    try {
-        if (!process.env.YOUTUBE_API_KEY) {
-            console.error('Missing YOUTUBE_API_KEY');
-            return res.status(500).json({ error: 'YOUTUBE_API_KEY is required' });
-        }
-
-        // 2. Initialize stateless transport
-        const transport = new StreamableHTTPServerTransport({
-            sessionIdGenerator: undefined 
-        });
-
-        // 3. Create server (Awaited)
-        const server = await createMcpServer(transport); 
-
-        // LOGGING: This helps us see if OpenAI is even trying to ask for tools
-        console.log(`Incoming MCP Request: ${req.method} ${req.url}`);
-
-        // 4. Handle the request
-        await transport.handleRequest(req, res);
-
-        // 5. Force end the response if it's still hanging
-        if (!res.writableEnded) {
-            res.end();
-        }
-
-    } catch (error) {
-        console.error('MCP HTTP Transport Error:', error);
-        if (!res.headersSent) {
-            res.status(500).json({
-                error: 'Internal server error',
-                message: error instanceof Error ? error.message : String(error)
-            });
-        }
-    }
-});
-
 
 // This catches the absolute root of your domain (https://your-app.vercel.app)
 app.get('/', (req: Request, res: Response) => {
